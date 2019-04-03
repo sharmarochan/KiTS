@@ -46,7 +46,14 @@ max_arr=[]
 min_arr = []
     
 
-for patient in all_patients[:2]:
+"""
+Remarks:
+insert tqdm for how many patients are done and how much slicing is done
+take relevent images only from the nifiti images
+Image data generator with saving all the pics into array in memory
+"""
+
+for patient in all_patients[:1]:
     semi_full_path =  os.path.join(data_set,patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
