@@ -21,6 +21,7 @@ visualize("case_00123", str("E:/temp/"))
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 #%matplotlib inline
 
 import os
@@ -50,7 +51,7 @@ data_set = r"E:\kits19\data"
 def show_slices(slices):
     fig, axes = plt.subplots(1, len(slices))
     for i, slice in enumerate(slices):
-        axes[i].imshow(slice.T, cmap="gray", origin="lower")   
+        axes[i].imshow(slice)   
 
 
 
@@ -60,7 +61,7 @@ all_patients =  next(os.walk(data_set))[1]
 imaging_arr = []
 segmentation_arr = []
 
-IMG_PIC_SIZE = 150
+IMG_PIC_SIZE = 512
 
 
 train=[]
@@ -68,6 +69,36 @@ target = []
 slices_images_imageFile = []
 slices_images_segFile = []
 
+
+'''
+
+def check_image_black_or_white(img):
+    extrema = img.convert("L").getextrema()
+    if extrema == (0, 0):  # all black
+        print("black")
+    elif extrema == (1, 1):
+        print("white")
+        # all white
+#    print(extrema)
+'''
+
+
+tmp_save_dir = r"E:\temp"
+
+max_arr=[]
+min_arr = []
+
+def is_sorta_black(arr, threshold=0.7):
+    tot = np.float(np.sum(arr))
+    if tot/arr.size  > (1-threshold):
+       print ("is not black")
+#       return False
+    else:
+       print ("is kinda black")
+#       return True
+   
+    
+    
 
 for patient in all_patients[:1]:
     semi_full_path =  os.path.join(data_set,patient)
@@ -78,62 +109,84 @@ for patient in all_patients[:1]:
         
         if file_type == "segmentation":
             full_path =  os.path.join(semi_full_path,file)
-            print(full_path)
+            segmentation_arr.append(full_path)
+            
+#            print(full_path)
             
             #segmentation file
             img_seg = nib.load(full_path).get_data()
-
+            print(img_seg.shape)
+            
             
             #plot the slices of the image
-
             slice_0 = img_seg[95, :, :]
             slice_1 = img_seg[201, :, :]
             slice_2 = img_seg[300, :, :]
+            
+            print(type(slice_1))
+            print(np.argmax(slice_2))
+            print(type(slice_1[162,480]))
+            
             show_slices([slice_0, slice_1, slice_2])
-            plt.suptitle("Center slices for EPI image")
+            plt.suptitle("Center slices for segmentation image")
             
-            for slice_num in range(img_seg.shape[0]):
-                slice = img_seg[slice_num, :, :]
-                print(slice.shape)
-                slices_images_segFile.append(slice)
+            for slice_num_seg in range(img_seg.shape[0]):
+                slice_seg = img_seg[slice_num_seg, :, :]
+                print(type(slice_seg))
+                print(type(slice_seg[0,0]))
+                max_arr.append(np.max(slice_seg))
+                min_arr.append(np.min(slice_seg))
                 
-            
-            print(len(img_seg[:12]))
-            print(len(img_seg))
-            print(img_seg.shape)
-
-            
-            print(img_seg.shape)
+                im_path = os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_seg)+".png"))
+                plt.imsave(im_path,slice_seg , cmap='gray')
+                
+#                slice_seg = cv2.resize(slice_seg,(IMG_PIC_SIZE , IMG_PIC_SIZE))
+                
+#                cv2.imwrite(os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_seg)+".png")),slice_seg)
+                is_sorta_black(slice_seg)
+                slices_images_segFile.append(slice_seg)
+                
+                
+                
+                
             #append to the array
             target.append(img_seg)
             
             
             
         if file_type == "imaging":
+            
+            #append to the array
+            imaging_arr.append(full_path)
+            
             full_path =  os.path.join(semi_full_path,file)
             print(full_path)
             img_kidney = nib.load(full_path).get_data()
+#            print(img_kidney.shape)
+            
+            train.append(img_kidney)
             
             #plot the slices of the image
             slice_0 = img_kidney[95, :, :]
             slice_1 = img_kidney[201, :, :]
             slice_2 = img_kidney[300, :, :]
             show_slices([slice_0, slice_1, slice_2])
-            plt.suptitle("Center slices for EPI image")
+            plt.suptitle("Center slices for imaging image")
             
             
             
-            for slice_num in range(img_kidney.shape[0]):
-                slice = img_kidney[slice_num, :, :]
-                print(slice.shape)
-                slices_images_imageFile.append(slice)
+            for slice_num_kidney in range(img_kidney.shape[0]):
+                slice_kidney = img_kidney[slice_num_kidney, :, :]
+                im_path = os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_kidney)+".png"))
+                plt.imsave(im_path,slice_kidney,cmap = 'gray')
+#                slice_kidney = cv2.resize(slice_kidney,(IMG_PIC_SIZE,IMG_PIC_SIZE))
+#                cv2.imwrite(os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_kidney)+".png")),slice_kidney)
+#                print(slice_kidney.shape)
+                is_sorta_black(slice_kidney)
+                slices_images_imageFile.append(slice_kidney)
+                
         
-            
-            
-            print(img_kidney.shape)
-            train.append(img_kidney)
-            #append to the array
-            imaging_arr.append(full_path)
+
             
 #        print(full_path)
             
@@ -148,7 +201,11 @@ print("[INFO] data matrix: {:.2f}MB".format(slices_images_imageFile_arr.nbytes /
             
 print("[INFO] data matrix: {:.2f}MB".format(slices_images_segFile_arr.nbytes / (1024 * 1000.0)))      
             
-            
+          
+
+
+
+  
      
 '''  
 print("############################################")     
