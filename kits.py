@@ -51,6 +51,8 @@ Remarks:
 insert tqdm for how many patients are done and how much slicing is done
 take relevent images only from the nifiti images
 Image data generator with saving all the pics into array in memory
+
+extact ROI from seg file and crop that section only to inser into NN.
 """
 
 for patient in all_patients[:1]:
