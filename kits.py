@@ -13,22 +13,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-#%matplotlib inline
-
 import os
 from glob import glob
 import sys
 import random
-#from tqdm import tqdm_notebook
 from skimage.io import imread, imshow
 from skimage.transform import resize
 from sklearn.metrics import jaccard_similarity_score
-#import torch
-#import torch.nn as nn
-#import torch.nn.functional as F
-#import torchvision.datasets as dsets
-#from torch.autograd import Variable
-#from tqdm import tqdm
 import os
 import nibabel as nib
 import pickle
