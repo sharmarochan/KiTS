@@ -130,18 +130,32 @@ for patient in all_patients[:1]:
             show_slices([slice_0, slice_1, slice_2])
             plt.suptitle("Center slices for segmentation image")
             
+#            count = 0
+            pic_having_kidey = []
+            pic_having_cancer = []
             for slice_num_seg in range(img_seg.shape[0]):
+#                count = count+1
                 slice_seg = img_seg[slice_num_seg, :, :]
+                max_val = slice_seg.max()
+                if (max_val == 1):
+                    print(max_val)
+                    pic_having_kidey.append(slice_num_seg)
+                    
+                if (max_val == 2):
+                    pic_having_cancer.append(slice_num_seg)
+                    
+                    
                 print(type(slice_seg))
                 print(type(slice_seg[0,0]))
                 max_arr.append(np.max(slice_seg))
                 min_arr.append(np.min(slice_seg))
                 
                 im_path = os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_seg)+".png"))
-                plt.imsave(im_path,slice_seg , cmap='gray')
+#                plt.imsave(im_path,slice_seg , cmap='gray')
+                
+                
                 
 #                slice_seg = cv2.resize(slice_seg,(IMG_PIC_SIZE , IMG_PIC_SIZE))
-                
 #                cv2.imwrite(os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_seg)+".png")),slice_seg)
                 is_sorta_black(slice_seg)
                 slices_images_segFile.append(slice_seg)
@@ -178,10 +192,14 @@ for patient in all_patients[:1]:
             for slice_num_kidney in range(img_kidney.shape[0]):
                 slice_kidney = img_kidney[slice_num_kidney, :, :]
                 im_path = os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_kidney)+".png"))
-                plt.imsave(im_path,slice_kidney,cmap = 'gray')
+#                plt.imsave(im_path,slice_kidney,cmap = 'gray')
+                
+                
 #                slice_kidney = cv2.resize(slice_kidney,(IMG_PIC_SIZE,IMG_PIC_SIZE))
 #                cv2.imwrite(os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_kidney)+".png")),slice_kidney)
 #                print(slice_kidney.shape)
+                
+                
                 is_sorta_black(slice_kidney)
                 slices_images_imageFile.append(slice_kidney)
                 
