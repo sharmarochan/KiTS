@@ -63,6 +63,7 @@ def extract_cancer_slice(seg_file):
     
     slices_having_kidney = []
     slices_having_cancer = []
+#    slices_having_both_cancer_and_kidney = []
     
     for slice_num in range(seg_file.shape[0]):
         slice_seg = seg_file[slice_num, :, :]
@@ -73,6 +74,13 @@ def extract_cancer_slice(seg_file):
         
         if (max_val == 2):
             slices_having_cancer.append(slice_num)
+            
+        ''' 
+        if (max_val == 1 or max_val ==2):
+            slices_having_both_cancer_and_kidney.append(slice_num)
+    print('slices_having_both_cancer_and_kidney' , slices_having_both_cancer_and_kidney)
+    print(len(slices_having_both_cancer_and_kidney))
+        '''
         
     return slices_having_cancer, slices_having_kidney    
         
@@ -109,11 +117,7 @@ for patient in tqdm(all_patients[:1], desc = "Outloop"):
                 slices_images_segFile.append(cancer_slice)
                 
                    
-            
-            
-        
-        
-                
+    
             
         
 Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
