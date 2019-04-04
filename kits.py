@@ -24,6 +24,8 @@ import os
 import nibabel as nib
 import pickle
 import cv2
+from tqdm import tqdm, tnrange
+from time import sleep
 
 
 
@@ -55,16 +57,40 @@ Image data generator with saving all the pics into array in memory
 extact ROI from seg file and crop that section only to inser into NN.
 """
 
-for patient in all_patients[:1]:
-    semi_full_path =  os.path.join(data_set,patient)
+def extract_cancer_slice(seg_file):
+    
+    seg_file = nib.load(seg_file).get_data()
+    
+    slices_having_kidney = []
+    slices_having_cancer = []
+    
+    for slice_num in range(seg_file.shape[0]):
+        slice_seg = seg_file[slice_num, :, :]
+        
+        max_val = slice_seg.max()
+        if (max_val == 1):
+            slices_having_kidney.append(slice_num)
+        
+        if (max_val == 2):
+            slices_having_cancer.append(slice_num)
+    print(slices_having_cancer)
+    print(slices_having_kidney)
+            
+        
+      
+
+
+for patient in tqdm(all_patients[:1], desc = "Outloop"):
+    semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
-    for file in files_per_patient:
+    for file in tqdm(files_per_patient, desc = '2nd loop', leave=False):
         file_type, _, _= file.split(".")
-        full_path =  os.path.join(semi_full_path,file)
+        full_path =  os.path.join(semi_full_path, file)
         
         if file_type == "segmentation":     #segmentation file
-            
+            extract_cancer_slice(full_path)
+            '''
             img_seg = nib.load(full_path).get_data()   #load nifti file as ndarrray
             
             
@@ -82,11 +108,11 @@ for patient in all_patients[:1]:
                 if (max_val == 2):                              # detecting pic having cancer and kideny section
                     pic_having_cancer.append(slice_num_seg)
                 
-                im_path = os.path.join(tmp_save_dir,(patient+'_'+file_type+'_slice_'+str(slice_num_seg)+".png"))
-                plt.imsave(im_path,slice_seg , cmap='gray')     #save image to directroy
+                im_path = os.path.join(tmp_save_dir, (patient + '_' + file_type + '_slice_' + str(slice_num_seg) + ".png"))
+#                plt.imsave(im_path,slice_seg , cmap='gray')     #save image to directroy
 
                 slices_images_segFile.append(slice_seg)         #append to targrt array
-        
+        '''
         
         if file_type == "imaging":                              #for full MRI image
             img_kidney = nib.load(full_path).get_data()         #get nd array from nifti
@@ -94,12 +120,14 @@ for patient in all_patients[:1]:
      
             for slice_num_kidney in range(img_kidney.shape[0]):
                 slice_kidney = img_kidney[slice_num_kidney, :, :]
-                im_path = os.path.join(tmp_save_dir , (patient+'_'+file_type+'_slice_'+str(slice_num_kidney)+".png"))
-                plt.imsave(im_path , slice_kidney,cmap = 'gray')        #save to directory
+                im_path = os.path.join(tmp_save_dir, (patient + '_' + file_type + '_slice_' + str(slice_num_kidney) + ".png"))
+#                plt.imsave(im_path , slice_kidney,cmap = 'gray')        #save to directory
 
                 slices_images_imageFile.append(slice_kidney)   #for training 
+                
+
             
-            
+                
             
         
 Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
@@ -107,13 +135,13 @@ Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
 Label_data = np.array(slices_images_segFile) 
                                                     #to check the size of traing and testing array
 print("Label data : {:.2f}MB  \
-      Image data  :{:.2f}MB ".format(Label_data.nbytes / (1024 * 1000.0) , Image_data.nbytes / (1024 * 1000.0)))      
+      Image data  :{:.2f}MB ".format(Label_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
             
           
 
 
 
-  
+
      
 '''  
 all the file has different channels like
