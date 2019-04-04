@@ -73,9 +73,8 @@ def extract_cancer_slice(seg_file):
         
         if (max_val == 2):
             slices_having_cancer.append(slice_num)
-    print(slices_having_cancer)
-    print(slices_having_kidney)
             
+    return slices_having_cancer, slices_having_kidney    
         
       
 
@@ -84,36 +83,17 @@ for patient in tqdm(all_patients[:1], desc = "Outloop"):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
-    for file in tqdm(files_per_patient, desc = '2nd loop', leave=False):
-        file_type, _, _= file.split(".")
+    files_per_patient = sorted(files_per_patient, reverse =True)
+    
+    
+    for file in tqdm(files_per_patient, desc = '2nd loop', leave=True):
         full_path =  os.path.join(semi_full_path, file)
-        
-        if file_type == "segmentation":     #segmentation file
-            extract_cancer_slice(full_path)
-            '''
-            img_seg = nib.load(full_path).get_data()   #load nifti file as ndarrray
+        print(full_path)
+        print(extract_cancer_slice(full_path))
+        print("finished")
             
             
-            pic_having_kidey = []           #slices having kidney not cancer
-            pic_having_cancer = []          #slices having kidney and cancer section
-            
-            
-            for slice_num_seg in range(img_seg.shape[0]):
-                slice_seg = img_seg[slice_num_seg, :, :]        #slices the 3d image based on depth
-                
-                max_val = slice_seg.max()                       #extract the max value based on the label of the pixels
-                if (max_val == 1):                              # detecting pic having kidney only
-                    pic_having_kidey.append(slice_num_seg)
-                    
-                if (max_val == 2):                              # detecting pic having cancer and kideny section
-                    pic_having_cancer.append(slice_num_seg)
-                
-                im_path = os.path.join(tmp_save_dir, (patient + '_' + file_type + '_slice_' + str(slice_num_seg) + ".png"))
-#                plt.imsave(im_path,slice_seg , cmap='gray')     #save image to directroy
-
-                slices_images_segFile.append(slice_seg)         #append to targrt array
         '''
-        
         if file_type == "imaging":                              #for full MRI image
             img_kidney = nib.load(full_path).get_data()         #get nd array from nifti
 
@@ -125,7 +105,7 @@ for patient in tqdm(all_patients[:1], desc = "Outloop"):
 
                 slices_images_imageFile.append(slice_kidney)   #for training 
                 
-
+'''
             
                 
             
