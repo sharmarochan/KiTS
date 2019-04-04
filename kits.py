@@ -50,8 +50,11 @@ min_arr = []
 
 """
 Remarks:
+    Done:
 insert tqdm for how many patients are done and how much slicing is done
 take relevent images only from the nifiti images
+
+Pending:
 Image data generator with saving all the pics into array in memory
 
 extact ROI from seg file and crop that section only to inser into NN.
@@ -102,7 +105,6 @@ for patient in tqdm(all_patients[:1], desc = "Outloop"):
         full_path =  os.path.join(semi_full_path, file)
         seg_or_image = nib.load(full_path).get_data()
         file_type, _, _= file.split(".")
-        print(file_type)
         
         if (file_type == 'imaging'):
         #extract images slices from the 3D image
@@ -127,10 +129,6 @@ Label_data = np.array(slices_images_segFile)
 print("Label data : {:.2f}MB  \
       Image data  :{:.2f}MB ".format(Label_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
             
-          
-
-
-
 
      
 '''  
