@@ -73,7 +73,7 @@ def extract_cancer_slice(seg_file):
         
         if (max_val == 2):
             slices_having_cancer.append(slice_num)
-            
+        
     return slices_having_cancer, slices_having_kidney    
         
       
@@ -85,28 +85,34 @@ for patient in tqdm(all_patients[:1], desc = "Outloop"):
     files_per_patient =  next(os.walk(semi_full_path))[2]
     files_per_patient = sorted(files_per_patient, reverse =True)
     
+    seg_file_path = os.path.join(semi_full_path, files_per_patient[0])
+    cancer_slice_num , kidney_slice_num = extract_cancer_slice(seg_file_path)
+
+    
     
     for file in tqdm(files_per_patient, desc = '2nd loop', leave=True):
         full_path =  os.path.join(semi_full_path, file)
-        print(full_path)
-        print(extract_cancer_slice(full_path))
-        print("finished")
-            
-            
-        '''
-        if file_type == "imaging":                              #for full MRI image
-            img_kidney = nib.load(full_path).get_data()         #get nd array from nifti
-
-     
-            for slice_num_kidney in range(img_kidney.shape[0]):
-                slice_kidney = img_kidney[slice_num_kidney, :, :]
-                im_path = os.path.join(tmp_save_dir, (patient + '_' + file_type + '_slice_' + str(slice_num_kidney) + ".png"))
-#                plt.imsave(im_path , slice_kidney,cmap = 'gray')        #save to directory
-
-                slices_images_imageFile.append(slice_kidney)   #for training 
+        seg_or_image = nib.load(full_path).get_data()
+        file_type, _, _= file.split(".")
+        print(file_type)
+        
+        if (file_type == 'imaging'):
+        #extract images slices from the 3D image
+            for s in cancer_slice_num:
+                cancer_slice = seg_or_image[s, :, :]
+                slices_images_imageFile.append(cancer_slice)
+        
+        if (file_type == 'segmentation'):
+        #extract slices from the 3D image
+            for s in cancer_slice_num:
+                cancer_slice = seg_or_image[s, :, :]
+                slices_images_segFile.append(cancer_slice)
                 
-'''
+                   
             
+            
+        
+        
                 
             
         
