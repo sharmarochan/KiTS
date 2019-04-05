@@ -4,7 +4,10 @@ Created on Mon Mar 18 06:44:42 2019
 
 @author: tensor19
 
+Kidney Tumor Segmentation Challenge, 2019 
+
 envirament name kids
+chainer
 """
 
 
@@ -95,14 +98,13 @@ def extract_cancer_slice(seg_file):
         
     return slices_having_cancer, slices_having_kidney    
         
+
+
       
-slices_images_imageFile = np.array([])    #slices of the images that will be used for trainig
-slices_images_segFile = np.array([])      #slices of the images that will be used for TARGET
-
-
-
-
-for patient in tqdm(all_patients[:2], desc = "Outloop"):
+slices_images_imageFile = []    #slices of the images that will be used for trainig
+slices_images_segFile = []      #slices of the images that will be used for TARGET
+#slices_images_seg = np.empty()
+for patient in tqdm(all_patients, desc = "Outloop"):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
@@ -126,37 +128,43 @@ for patient in tqdm(all_patients[:2], desc = "Outloop"):
                 im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_img_slice = seg_or_image[s, :, :]
-                plt.imsave(im_path, cancer_img_slice , cmap='gray')
-#                cancer_slice_img_expand_dim = np.expand_dims(cancer_img_slice, axis=-1)
-#                np.append(slices_images_imageFile, cancer_slice_img_expand_dim, axis=0)
-        
+                cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
+                #cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
+                #slices_images_imageFile = np.append(slices_images_imageFile, cancer_img_slice, axis=0)
+                slices_images_imageFile.append(cancer_img_slice)
+#                plt.imsave(im_path, cancer_img_slice , cmap='gray')
+            
+            
+#                if s==290:
+#                    plt.imshow(cancer_img_slice)
+     
         if (file_type == 'segmentation'):
         #extract slices from the 3D image
             for s in cancer_slice_num:
                 im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_slice_seg = seg_or_image[s, :, :]
-                plt.imsave(im_path, cancer_slice_seg , cmap='gray')
+                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)
+                #cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
+                
+                slices_images_segFile.append(cancer_slice_seg)
+                #np.append(slices_images_segFile, cancer_slice_seg, axis=0)
+#                plt.imsave(im_path, cancer_slice_seg , cmap='gray')
+                
+#                if s==290:
+#                    plt.imshow(cancer_slice_seg)
+      
         
-
-len(slices_images_imageFile)
-
-len(slices_images_segFile)       
-    
-
-
-
-cancer_slice_seg_expand_dim = np.expand_dims(cancer_slice_seg, axis=-1)
-print(type(cancer_slice_seg_expand_dim))
-
-
         
-Image_data = np.asarray(slices_images_imageFile)          #convert list to ndarray
+        
+        
+Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
 
-Label_data = np.asarray(slices_images_segFile) 
+Label_data = np.array(slices_images_segFile)
 
-
-                                                
+'''
+ValueError: could not broadcast input array from shape (512,512,1) into shape (512)
+'''
 
 Image_data.shape
 Label_data.shape
