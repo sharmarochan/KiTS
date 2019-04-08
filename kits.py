@@ -185,7 +185,7 @@ start = time.time()
         
 Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
 #del slices_images_imageFile
-Label_data = np.array(slices_images_segFile)
+Target_data = np.array(slices_images_segFile)
 
 
 end = time.time()
@@ -195,31 +195,35 @@ print(end - start)
 
 '''
 ValueError: could not broadcast input array from shape (512,512,1) into shape (512)
+
+4772 samples for training and 843 samples for testing
+
+4492 samples for training and 1123 samples for testing
+
+
 '''
 
 Image_data.shape
-Label_data.shape
+Target_data.shape
 
 
 #Image_data = np.expand_dims(Image_data, axis=-1)
-#Label_data = np.expand_dims(Label_data, axis=-1)
+#Target_data = np.expand_dims(Label_data, axis=-1)
 
 
 #to check the size of traing and testing array
 print("Label data : {:.2f}MB  \
-      Image data  :{:.2f}MB ".format(Label_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
+      Image data  :{:.2f}MB ".format(Target_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
 
 
 print(Image_data.shape)      
-print(Label_data.shape)   
+print(Target_data.shape)   
 
 
 
 
 ####################UNET#########################
-
-
-
+#https://www.depends-on-the-definition.com/unet-keras-segmenting-images/
 
 
 import os
@@ -250,16 +254,7 @@ from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 
 
-            
-im_width = 512
-im_height = 512
-
-
-
-
-X_train, X_valid, y_train, y_valid = train_test_split(Image_data, Label_data, test_size=0.15, random_state=2018)
-
-
+X_train, X_valid, y_train, y_valid = train_test_split(Image_data, Target_data, test_size=0.20, random_state=2018)
 
 
 
@@ -327,6 +322,9 @@ def get_unet(input_img, n_filters=16, dropout=0.5, batchnorm=True):
 
 
 
+im_width = 512
+im_height = 512
+
 
 
 
@@ -340,14 +338,10 @@ model.summary()
 
 
 callbacks = [
-    EarlyStopping(patience=10, verbose=1),
+    EarlyStopping(patience=5, verbose=1),
     ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-    ModelCheckpoint('model-tgs-salt.h5', verbose=1, save_best_only=True, save_weights_only=True)
+    ModelCheckpoint('kits_model.h5', verbose=1, save_best_only=True, save_weights_only=True)
 ]
-
-
-
-
 
 
 
@@ -355,3 +349,33 @@ callbacks = [
 
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
                     validation_data=(X_valid, y_valid))
+
+
+
+
+
+
+
+from keras.models import model_from_json
+
+
+# serialize model to JSON
+model_json = model.to_json()
+with open("kits_model.json", "w") as json_file:
+    json_file.write(model_json)
+# serialize weights to HDF5
+model.save_weights("kits_model.h5")
+print("Saved model to disk")
+
+
+
+
+
+
+
+
+
+
+
+
+
