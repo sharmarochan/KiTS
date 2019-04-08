@@ -63,6 +63,9 @@ Make a CSV file for storing the position and depth of the images.
 extact ROI from seg file and crop that section only to inser into NN.
 
 
+convert ndarray to nifti
+
+
     Note:
 all the file has different channels like
 (611, 512, 512)
@@ -196,10 +199,9 @@ print(end - start)
 '''
 ValueError: could not broadcast input array from shape (512,512,1) into shape (512)
 
-4772 samples for training and 843 samples for testing
+4772 samples for training and 843 samples for testing  (0.15)
 
-4492 samples for training and 1123 samples for testing
-
+4492 samples for training and 1123 samples for testing  (0.20)
 
 '''
 
@@ -343,8 +345,10 @@ callbacks = [
     ModelCheckpoint('kits_model.h5', verbose=1, save_best_only=True, save_weights_only=True)
 ]
 
-
-
+#callbacks: class
+#EarlyStopping: 5 number of epochs with no improvement after which training will be stopped
+#ReduceLROnPlateau: reduce learning rate if no improvement is shown for 3 epochs
+#ModelCheckpoint: Save the model after every epoch.
 
 
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
@@ -354,26 +358,46 @@ results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callb
 
 
 
-
-
-from keras.models import model_from_json
-
-
-# serialize model to JSON
-model_json = model.to_json()
-with open("kits_model.json", "w") as json_file:
-    json_file.write(model_json)
-# serialize weights to HDF5
-model.save_weights("kits_model.h5")
-print("Saved model to disk")
+plt.figure(figsize=(8, 8))
+plt.title("Learning curve")
+plt.plot(results.history["loss"], label="loss")
+plt.plot(results.history["val_loss"], label="val_loss")
+plt.plot( np.argmin(results.history["val_loss"]), np.min(results.history["val_loss"]), marker="x", color="r", label="best model")
+plt.xlabel("Epochs")
+plt.ylabel("log_loss")
+plt.legend();
 
 
 
 
+# Load best model
+model.load_weights('kits_model.h5')
+
+
+
+# Evaluate on validation set (this must be equals to the best log_loss)
+model.evaluate(X_valid, y_valid, verbose=1)
+
+
+# Predict on train, val and test
+preds_train = model.predict(X_train, verbose=1)
+preds_val = model.predict(X_valid, verbose=1)
+
+# Threshold predictions
+preds_train_t = (preds_train > 0.5).astype(np.uint8)
+preds_val_t = (preds_val > 0.5).astype(np.uint8)
 
 
 
 
+
+
+
+
+
+
+
+    
 
 
 
