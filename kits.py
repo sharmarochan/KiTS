@@ -138,11 +138,12 @@ for patient in tqdm(all_patients):
 #                im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_img_slice = seg_or_image[s, :, :]
+#                cancer_img_slice_ = seg_or_image[s, :, :]
                 cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
-                #cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
+#                cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
                 #slices_images_imageFile = np.append(slices_images_imageFile, cancer_img_slice, axis=0)
                 
-                if (cancer_img_slice.shape[0] ==512 and cancer_img_slice.shape[1] ==512 and cancer_img_slice.shape[2] == 1):
+                if (cancer_img_slice.shape[0] == 512 and cancer_img_slice.shape[1] ==512 and cancer_img_slice.shape[2] == 1):
 #                    continue
                         slices_images_imageFile.append(cancer_img_slice)
                 else:
@@ -159,10 +160,11 @@ for patient in tqdm(all_patients):
 #                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_slice_seg = seg_or_image[s, :, :]
-                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)
-                #cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
+#                cancer_slice_seg_ = seg_or_image[s, :, :]
+                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel last
+#                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
                 
-                if (cancer_slice_seg.shape[0] ==512 and cancer_slice_seg.shape[1] ==512 and cancer_slice_seg.shape[2] == 1):
+                if (cancer_slice_seg.shape[0] == 512 and cancer_slice_seg.shape[1] ==512 and cancer_slice_seg.shape[2] == 1):
 #                    continue
                     slices_images_segFile.append(cancer_slice_seg)
                 else:
@@ -175,11 +177,21 @@ for patient in tqdm(all_patients):
 #                    plt.imshow(cancer_slice_seg)
       
 
-        
+
+
+import time
+start = time.time()
+      
         
 Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
 #del slices_images_imageFile
 Label_data = np.array(slices_images_segFile)
+
+
+end = time.time()
+print(end - start)
+
+
 
 '''
 ValueError: could not broadcast input array from shape (512,512,1) into shape (512)
@@ -239,9 +251,9 @@ from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_a
 
 
             
-im_width = 128
-im_height = 128
-border = 5
+im_width = 512
+im_height = 512
+
 
 
 
