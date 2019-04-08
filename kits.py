@@ -6,6 +6,8 @@ Created on Mon Mar 18 06:44:42 2019
 
 Kidney Tumor Segmentation Challenge, 2019 
 
+All rights Reserved to RIL
+
 envirament name kids
 chainer
 """
@@ -69,6 +71,12 @@ all the file has different channels like
 (270, 512, 512)
 (64, 512, 512)
 
+
+patient 160's dimention is not same
+
+
+Numpy Reshape doesn't change the data
+
 """
 
 def extract_cancer_slice(seg_file):
@@ -103,8 +111,10 @@ def extract_cancer_slice(seg_file):
       
 slices_images_imageFile = []    #slices of the images that will be used for trainig
 slices_images_segFile = []      #slices of the images that will be used for TARGET
+
+
 #slices_images_seg = np.empty()
-for patient in tqdm(all_patients, desc = "Outloop"):
+for patient in tqdm(all_patients):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
@@ -125,13 +135,18 @@ for patient in tqdm(all_patients, desc = "Outloop"):
         if (file_type == 'imaging'):
         #extract images slices from the 3D image
             for s in cancer_slice_num:
-                im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
+#                im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_img_slice = seg_or_image[s, :, :]
                 cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
                 #cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
                 #slices_images_imageFile = np.append(slices_images_imageFile, cancer_img_slice, axis=0)
-                slices_images_imageFile.append(cancer_img_slice)
+                
+                if (cancer_img_slice.shape[0] ==512 and cancer_img_slice.shape[1] ==512 and cancer_img_slice.shape[2] == 1):
+#                    continue
+                        slices_images_imageFile.append(cancer_img_slice)
+                else:
+                    print("Dimention is not good", patient)
 #                plt.imsave(im_path, cancer_img_slice , cmap='gray')
             
             
@@ -141,25 +156,29 @@ for patient in tqdm(all_patients, desc = "Outloop"):
         if (file_type == 'segmentation'):
         #extract slices from the 3D image
             for s in cancer_slice_num:
-                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
+#                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_slice_seg = seg_or_image[s, :, :]
                 cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)
                 #cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
                 
-                slices_images_segFile.append(cancer_slice_seg)
+                if (cancer_slice_seg.shape[0] ==512 and cancer_slice_seg.shape[1] ==512 and cancer_slice_seg.shape[2] == 1):
+#                    continue
+                    slices_images_segFile.append(cancer_slice_seg)
+                else:
+                    print("Dimention is not good", patient)
+
                 #np.append(slices_images_segFile, cancer_slice_seg, axis=0)
 #                plt.imsave(im_path, cancer_slice_seg , cmap='gray')
                 
 #                if s==290:
 #                    plt.imshow(cancer_slice_seg)
       
-        
-        
+
         
         
 Image_data = np.array(slices_images_imageFile)          #convert list to ndarray
-
+#del slices_images_imageFile
 Label_data = np.array(slices_images_segFile)
 
 '''
@@ -170,8 +189,8 @@ Image_data.shape
 Label_data.shape
 
 
-Image_data = np.expand_dims(Image_data, axis=-1)
-Label_data = np.expand_dims(Label_data, axis=-1)
+#Image_data = np.expand_dims(Image_data, axis=-1)
+#Label_data = np.expand_dims(Label_data, axis=-1)
 
 
 #to check the size of traing and testing array
