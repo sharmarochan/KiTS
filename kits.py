@@ -389,14 +389,39 @@ preds_val_t = (preds_val > 0.5).astype(np.uint8)
 
 
 
+def plot_sample(X, y, preds, binary_preds, ix=None):
+    if ix is None:
+        ix = random.randint(0, len(X))
+
+    has_mask = y[ix].max() > 0
+
+    fig, ax = plt.subplots(1, 4, figsize=(20, 10))
+    
+    ax[0].imshow(X[ix, ..., 0], cmap='seismic')
+    if has_mask:
+        ax[0].contour(y[ix].squeeze(), colors='k', levels=[0.5])
+    ax[0].set_title('Image')
+
+    ax[1].imshow(y[ix].squeeze())
+    ax[1].set_title('cancer')
+
+    ax[2].imshow(preds[ix].squeeze(), vmin=0, vmax=1)
+    if has_mask:
+        ax[2].contour(y[ix].squeeze(), colors='k', levels=[0.5])
+    ax[2].set_title('Image')
+    
+    ax[3].imshow(binary_preds[ix].squeeze(), vmin=0, vmax=1)
+    if has_mask:
+        ax[3].contour(y[ix].squeeze(), colors='k', levels=[0.5])
+    ax[3].set_title('Cancer Predicted');
 
 
 
 
+plot_sample(X_train, y_train, preds_train, preds_train_t, ix=14)
 
 
-
-
+plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=19)
     
 
 
