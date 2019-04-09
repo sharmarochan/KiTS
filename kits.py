@@ -61,7 +61,9 @@ take relevent images only from the nifiti images
 Image data generator with saving all the pics into array in memory
 Make a CSV file for storing the position and depth of the images.
 extact ROI from seg file and crop that section only to inser into NN.
-
+*********
+Train on Half dataset for longer epoches and see results. Post processing
+*********
 
 convert ndarray to nifti
 
@@ -418,10 +420,10 @@ def plot_sample(X, y, preds, binary_preds, ix=None):
 
 
 
-plot_sample(X_train, y_train, preds_train, preds_train_t, ix=14)
+plot_sample(X_train, y_train, preds_train, preds_train_t, ix=20)
 
 
-plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=19)
+plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=20)
     
 
 
