@@ -31,7 +31,7 @@ import pickle
 import cv2
 from tqdm import tqdm, tnrange
 from time import sleep
-
+import png
 
 
 data_set = r"E:\kits19\data"    #data set path
@@ -39,7 +39,7 @@ data_set = r"E:\kits19\data"    #data set path
 all_patients =  next(os.walk(data_set))[1]      #get the name of the folder_names  
 
 
-IMG_PIC_SIZE = 512    #to contol the size of each slice
+IMG_PIC_SIZE = 300    #to contol the size of each slice
 
 
 
@@ -63,6 +63,7 @@ Make a CSV file for storing the position and depth of the images.
 extact ROI from seg file and crop that section only to inser into NN.
 *********
 Train on Half dataset for longer epoches and see results. Post processing
+Reduce the size of the image
 *********
 
 convert ndarray to nifti
@@ -117,7 +118,7 @@ def extract_cancer_slice(seg_file):
 slices_images_imageFile = []    #slices of the images that will be used for trainig
 slices_images_segFile = []      #slices of the images that will be used for TARGET
 
-
+print("Loading dataset...")
 #slices_images_seg = np.empty()
 for patient in tqdm(all_patients):
     semi_full_path =  os.path.join(data_set, patient)
@@ -133,6 +134,7 @@ for patient in tqdm(all_patients):
     for file in files_per_patient:
         full_path =  os.path.join(semi_full_path, file)
         seg_or_image = nib.load(full_path).get_data()
+        img_data_arr = np.asarray(seg_or_image)
         file_type, _, _= file.split(".")
         
         
@@ -143,12 +145,14 @@ for patient in tqdm(all_patients):
 #                im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_img_slice = seg_or_image[s, :, :]
-#                cancer_img_slice_ = seg_or_image[s, :, :]
+                cancer_img_slice_height, cancer_img_slice_width = cancer_img_slice.shape[0], cancer_img_slice.shape[1]
+                
+                cancer_img_slice = cancer_img_slice[100:400 , 100:400]
                 cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
 #                cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
                 #slices_images_imageFile = np.append(slices_images_imageFile, cancer_img_slice, axis=0)
                 
-                if (cancer_img_slice.shape[0] == 512 and cancer_img_slice.shape[1] ==512 and cancer_img_slice.shape[2] == 1):
+                if (cancer_img_slice_height == 512 and cancer_img_slice_width ==512):
 #                    continue
                         slices_images_imageFile.append(cancer_img_slice)
                 else:
@@ -165,11 +169,13 @@ for patient in tqdm(all_patients):
 #                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_slice_seg = seg_or_image[s, :, :]
-#                cancer_slice_seg_ = seg_or_image[s, :, :]
-                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel last
+                cancer_slice_seg_height, cancer_slice_seg_width = cancer_slice_seg.shape[0], cancer_slice_seg.shape[1]
+                
+                cancer_slice_seg = cancer_slice_seg[100:400 , 100:400]
+                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel_last
 #                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
                 
-                if (cancer_slice_seg.shape[0] == 512 and cancer_slice_seg.shape[1] ==512 and cancer_slice_seg.shape[2] == 1):
+                if (cancer_slice_seg_height == 512 and cancer_slice_seg_width ==512):
 #                    continue
                     slices_images_segFile.append(cancer_slice_seg)
                 else:
@@ -420,10 +426,10 @@ def plot_sample(X, y, preds, binary_preds, ix=None):
 
 
 
-plot_sample(X_train, y_train, preds_train, preds_train_t, ix=20)
+plot_sample(X_train, y_train, preds_train, preds_train_t, ix=200)
 
 
-plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=20)
+plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=200)
     
 
 
