@@ -39,16 +39,10 @@ data_set = r"E:\kits19\data"    #data set path
 all_patients =  next(os.walk(data_set))[1]      #get the name of the folder_names  
 
 
-IMG_PIC_SIZE = 300    #to contol the size of each slice
-
-
-
 
 train_save_dir = r"E:\image_data\train"
 test_save_dir = r"E:\image_data\test"
 
-max_arr=[]
-min_arr = []
     
 
 """
@@ -118,6 +112,8 @@ def extract_cancer_slice(seg_file):
 slices_images_imageFile = []    #slices of the images that will be used for trainig
 slices_images_segFile = []      #slices of the images that will be used for TARGET
 
+
+
 print("Loading dataset...")
 #slices_images_seg = np.empty()
 for patient in tqdm(all_patients):
@@ -142,53 +138,41 @@ for patient in tqdm(all_patients):
         if (file_type == 'imaging'):
         #extract images slices from the 3D image
             for s in cancer_slice_num:
-#                im_path = os.path.join(train_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
                 
                 cancer_img_slice = seg_or_image[s, :, :]
                 cancer_img_slice_height, cancer_img_slice_width = cancer_img_slice.shape[0], cancer_img_slice.shape[1]
                 
-                cancer_img_slice = cancer_img_slice[100:400 , 100:400]
+                cancer_img_slice = cancer_img_slice[95:415 , 95:415]
                 cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
-#                cancer_img_slice = np.expand_dims(cancer_img_slice, axis=0)
-                #slices_images_imageFile = np.append(slices_images_imageFile, cancer_img_slice, axis=0)
-                
+           
                 if (cancer_img_slice_height == 512 and cancer_img_slice_width ==512):
-#                    continue
                         slices_images_imageFile.append(cancer_img_slice)
                 else:
                     print("Dimention is not good", patient)
-#                plt.imsave(im_path, cancer_img_slice , cmap='gray')
-            
-            
-#                if s==290:
-#                    plt.imshow(cancer_img_slice)
+
      
         if (file_type == 'segmentation'):
         #extract slices from the 3D image
             for s in cancer_slice_num:
-#                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
-                
+    
                 cancer_slice_seg = seg_or_image[s, :, :]
                 cancer_slice_seg_height, cancer_slice_seg_width = cancer_slice_seg.shape[0], cancer_slice_seg.shape[1]
                 
-                cancer_slice_seg = cancer_slice_seg[100:400 , 100:400]
-                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel_last
-#                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=0)
+                cancer_slice_seg = cancer_slice_seg[95:415 , 95:415]
                 
+                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
+                plt.imsave(im_path, cancer_slice_seg)
+                
+                
+                cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel_last
+               
                 if (cancer_slice_seg_height == 512 and cancer_slice_seg_width ==512):
 #                    continue
                     slices_images_segFile.append(cancer_slice_seg)
                 else:
                     print("Dimention is not good", patient)
 
-                #np.append(slices_images_segFile, cancer_slice_seg, axis=0)
-#                plt.imsave(im_path, cancer_slice_seg , cmap='gray')
-                
-#                if s==290:
-#                    plt.imshow(cancer_slice_seg)
-      
-
-
+#https://github.com/sharmarochan/KiTS/commit/39bcf23c190eb530512343c87c6cfb4b3ae387c2
 
 import time
 start = time.time()
@@ -213,21 +197,15 @@ ValueError: could not broadcast input array from shape (512,512,1) into shape (5
 
 '''
 
-Image_data.shape
-Target_data.shape
+print(Image_data.shape)      
+print(Target_data.shape)   
 
-
-#Image_data = np.expand_dims(Image_data, axis=-1)
-#Target_data = np.expand_dims(Label_data, axis=-1)
 
 
 #to check the size of traing and testing array
 print("Label data : {:.2f}MB  \
       Image data  :{:.2f}MB ".format(Target_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
 
-
-print(Image_data.shape)      
-print(Target_data.shape)   
 
 
 
@@ -332,8 +310,8 @@ def get_unet(input_img, n_filters=16, dropout=0.5, batchnorm=True):
 
 
 
-im_width = 512
-im_height = 512
+im_width = 320
+im_height = 320
 
 
 
@@ -350,7 +328,7 @@ model.summary()
 callbacks = [
     EarlyStopping(patience=5, verbose=1),
     ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-    ModelCheckpoint('kits_model.h5', verbose=1, save_best_only=True, save_weights_only=True)
+    ModelCheckpoint('kits_model_ROI.h5', verbose=1, save_best_only=True, save_weights_only=True)
 ]
 
 #callbacks: class
@@ -379,7 +357,7 @@ plt.legend();
 
 
 # Load best model
-model.load_weights('kits_model.h5')
+model.load_weights('kits_model_ROI.h5')
 
 
 
