@@ -160,8 +160,8 @@ for patient in tqdm(all_patients):
                 
                 cancer_slice_seg = cancer_slice_seg[95:415 , 95:415]
                 
-                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
-                plt.imsave(im_path, cancer_slice_seg)
+#                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
+#                plt.imsave(im_path, cancer_slice_seg)
                 
                 
                 cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel_last
@@ -320,7 +320,7 @@ input_img = Input((im_height, im_width, 1), name='img')
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 
 model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
-model.summary()
+#model.summary()
 
 
 
