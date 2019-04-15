@@ -135,7 +135,7 @@ slices_images_segFile = []      #slices of the images that will be used for TARG
 
 print("Loading dataset...")
 #slices_images_seg = np.empty()
-for patient in tqdm(all_patients[:5]):
+for patient in tqdm(all_patients):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
@@ -239,6 +239,9 @@ print("Label data : {:.2f}MB  \
 #https://www.depends-on-the-definition.com/unet-keras-segmenting-images/
 
 
+
+
+
 import os
 import random
 import pandas as pd
@@ -339,7 +342,7 @@ im_width = 320
 im_height = 320
 
 
-
+##################################### Model Compile or RESET #####################################
 
 input_img = Input((im_height, im_width, 1), name='img')
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
@@ -353,42 +356,52 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
 callbacks = [
-        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period =5)
+        EarlyStopping(patience=3, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
 ]
 
-#callbacks = [
-#    EarlyStopping(patience=3, verbose=1),
-#    ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-#    ModelCheckpoint('kits_model_ROI.h5', verbose=1, save_weights_only=True, period =5)
-#]
 
 #callbacks: class
 #EarlyStopping: 5 number of epochs with no improvement after which training will be stopped
 #ReduceLROnPlateau: reduce learning rate if no improvement is shown for 3 epochs
 #ModelCheckpoint: Save the model after every epoch.
 
-
+#Untrained model
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
 #Untrained model, loss: 1187.48% , accuracy: 18.89%    on 5 patient data
 
+
+
+#Training of the model
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
                     validation_data=(X_valid, y_valid))
+
+
+####### Runned upto here Rochan #######
 
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
 
 # Trained model, loss: 112.45% , accuracy: 70.74%   on 5 patient data
 
-#Trained model, loss: 40.81% , accuracy: 97.76%  on sencond time training from 5th epoch
+#Trained model, loss: 40.81% , accuracy: 97.76%  on sencond time training from 5th epoch to 10th epoch
 
-#reset model
+
+
+"""
+##########################     reset model ##########################
+
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Rreset model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
 #Reset model, loss: 1187.48% , accuracy: 18.89%    on 5 patient data
 #Rreset model, loss: 1242.34% , accuracy: 18.93% on sencond time reset after 5th epoch
+"""
+
+
 
 plt.figure(figsize=(8, 8))
 plt.title("Learning curve")
@@ -400,35 +413,42 @@ plt.ylabel("log_loss")
 plt.legend();
 
 
+"""
+The accuracy is very low and the error is very high without loading model weights
+"""
+
+########################## START : if the training is stopped or kernel is dead #######################
+
 
 #latest = tf.train.latest_checkpoint(checkpoint_dir)
 os.listdir(checkpoint_dir)
 
 
-latest = 'E:/kits19/checkpoints/cp-0005.ckpt'
-
 #initiate the model architecture of the model if the training is stopped or kernel is dead
-
+latest = 'E:/kits19/checkpoints/cp-0005.ckpt'
 model.load_weights(latest)
+
+# Restore model
 
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Restored model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+#Restored model, loss: 40.78% , accuracy: 97.98%
 
- 
-#Restored model, loss: 40.78% , accuracy: 97.98% after 5th epoch
 
-"""
-The accuracy is very low and the error is very high without loading model weights
-"""
 
 
 # Evaluate on validation set (this must be equals to the best log_loss)
-# Load best model
+
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+
+
+# Load best model
 model.load_weights(checkpoint_path)
 model.evaluate(X_valid, y_valid, verbose=1)
 
+
+##########################  Inference with model  ##########################
 
 # Predict on train, val and test
 preds_train = model.predict(X_train, verbose=1)
@@ -437,6 +457,10 @@ preds_val = model.predict(X_valid, verbose=1)
 # Threshold predictions
 preds_train_t = (preds_train > 0.5).astype(np.uint8)
 preds_val_t = (preds_val > 0.5).astype(np.uint8)
+
+
+
+
 
 
 
