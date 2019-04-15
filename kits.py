@@ -371,7 +371,7 @@ callbacks = [
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
 #Untrained model, loss: 1187.48% , accuracy: 18.89%    on 5 patient data
-
+#Untrained model, loss: 1027.48% , accuracy: 27.36%   for all patients
 
 
 #Training of the model
