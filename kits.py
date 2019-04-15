@@ -77,6 +77,25 @@ patient 160's dimention is not same
 
 Numpy Reshape doesn't change the data
 
+
+
+****
+
+m_flair = np.mean(file_type_flair)                         
+s_flair = np.std(file_type_flair)
+
+training accuracy with 92 but validation accuracy start with 84 on deviding mean and std deviation,
+when slices are direct fead into the networkthe accuracy start with 0.84 and validation accuracy is 0.82
+
+
+****
+
+****
+
+https://www.coursera.org/lecture/neurohacking/the-nifti-format-pKtlS
+
+****
+
 """
 
 def extract_cancer_slice(seg_file):
@@ -116,7 +135,7 @@ slices_images_segFile = []      #slices of the images that will be used for TARG
 
 print("Loading dataset...")
 #slices_images_seg = np.empty()
-for patient in tqdm(all_patients):
+for patient in tqdm(all_patients[:3]):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
@@ -143,6 +162,10 @@ for patient in tqdm(all_patients):
                 cancer_img_slice_height, cancer_img_slice_width = cancer_img_slice.shape[0], cancer_img_slice.shape[1]
                 
                 cancer_img_slice = cancer_img_slice[95:415 , 95:415]
+                
+#                im_path = os.path.join(train_save_dir, (patient+'_'+file_type+'_slice_'+str(s)+".png"))
+#                plt.imsave(im_path, cancer_img_slice, cmap = 'gray')
+                
                 cancer_img_slice = np.expand_dims(cancer_img_slice, axis=-1)
            
                 if (cancer_img_slice_height == 512 and cancer_img_slice_width ==512):
@@ -160,8 +183,8 @@ for patient in tqdm(all_patients):
                 
                 cancer_slice_seg = cancer_slice_seg[95:415 , 95:415]
                 
-#                im_path = os.path.join(test_save_dir,(patient+'_'+file_type+'_slice_'+str(s)+".png"))
-#                plt.imsave(im_path, cancer_slice_seg)
+#                im_path = os.path.join(test_save_dir, (patient+'_'+file_type+'_slice_'+str(s)+".png"))
+#                plt.imsave(im_path, cancer_slice_seg, cmap = 'gray')
                 
                 
                 cancer_slice_seg = np.expand_dims(cancer_slice_seg, axis=-1)   #keras.json channel_last
@@ -171,6 +194,8 @@ for patient in tqdm(all_patients):
                     slices_images_segFile.append(cancer_slice_seg)
                 else:
                     print("Dimention is not good", patient)
+                    
+                    
 
 #https://github.com/sharmarochan/KiTS/commit/39bcf23c190eb530512343c87c6cfb4b3ae387c2
 
