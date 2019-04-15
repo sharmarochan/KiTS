@@ -135,7 +135,7 @@ slices_images_segFile = []      #slices of the images that will be used for TARG
 
 print("Loading dataset...")
 #slices_images_seg = np.empty()
-for patient in tqdm(all_patients[:3]):
+for patient in tqdm(all_patients[:5]):
     semi_full_path =  os.path.join(data_set, patient)
 
     files_per_patient =  next(os.walk(semi_full_path))[2]
@@ -265,7 +265,7 @@ from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-
+import tensorflow as tf
 
 X_train, X_valid, y_train, y_valid = train_test_split(Image_data, Target_data, test_size=0.20, random_state=2018)
 
@@ -348,13 +348,19 @@ model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"]
 #model.summary()
 
 
+checkpoint_path = "E:\kits19\checkpoints\cp-{epoch:04d}.ckpt"
+checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
 callbacks = [
-    EarlyStopping(patience=5, verbose=1),
-    ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-    ModelCheckpoint('kits_model_ROI.h5', verbose=1, save_best_only=True, save_weights_only=True)
+        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period =5)
 ]
+
+#callbacks = [
+#    EarlyStopping(patience=3, verbose=1),
+#    ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+#    ModelCheckpoint('kits_model_ROI.h5', verbose=1, save_weights_only=True, period =5)
+#]
 
 #callbacks: class
 #EarlyStopping: 5 number of epochs with no improvement after which training will be stopped
@@ -362,12 +368,27 @@ callbacks = [
 #ModelCheckpoint: Save the model after every epoch.
 
 
+loss, acc = model.evaluate(X_valid, y_valid)
+print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+#Untrained model, loss: 1187.48% , accuracy: 18.89%    on 5 patient data
+
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
                     validation_data=(X_valid, y_valid))
 
+loss, acc = model.evaluate(X_valid, y_valid)
+print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
 
+# Trained model, loss: 112.45% , accuracy: 70.74%   on 5 patient data
 
+#Trained model, loss: 40.81% , accuracy: 97.76%  on sencond time training from 5th epoch
 
+#reset model
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+loss, acc = model.evaluate(X_valid, y_valid)
+print("Rreset model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+#Reset model, loss: 1187.48% , accuracy: 18.89%    on 5 patient data
+#Rreset model, loss: 1242.34% , accuracy: 18.93% on sencond time reset after 5th epoch
 
 plt.figure(figsize=(8, 8))
 plt.title("Learning curve")
@@ -380,13 +401,32 @@ plt.legend();
 
 
 
+#latest = tf.train.latest_checkpoint(checkpoint_dir)
+os.listdir(checkpoint_dir)
 
-# Load best model
-model.load_weights('kits_model_ROI.h5')
 
+latest = 'E:/kits19/checkpoints/cp-0005.ckpt'
+
+#initiate the model architecture of the model if the training is stopped or kernel is dead
+
+model.load_weights(latest)
+
+loss, acc = model.evaluate(X_valid, y_valid)
+print("Restored model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+
+ 
+#Restored model, loss: 40.78% , accuracy: 97.98% after 5th epoch
+
+"""
+The accuracy is very low and the error is very high without loading model weights
+"""
 
 
 # Evaluate on validation set (this must be equals to the best log_loss)
+# Load best model
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+model.load_weights(checkpoint_path)
 model.evaluate(X_valid, y_valid, verbose=1)
 
 
