@@ -347,7 +347,7 @@ im_height = 320
 input_img = Input((im_height, im_width, 1), name='img')
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 
-model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
 #model.summary()
 
 
@@ -392,6 +392,8 @@ print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*
 
 """
 ##########################     reset model ##########################
+https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/keras/save_and_restore_models.ipynb?hl=es-MX#scrollTo=IFPuhwntH8VH
+
 
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
@@ -425,7 +427,7 @@ os.listdir(checkpoint_dir)
 
 
 #initiate the model architecture of the model if the training is stopped or kernel is dead
-latest = 'E:/kits19/checkpoints/cp-0005.ckpt'
+latest = 'E:/kits19/checkpoints/cp-0001.ckpt'
 model.load_weights(latest)
 
 # Restore model
@@ -440,7 +442,7 @@ print("Restored model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100
 # Evaluate on validation set (this must be equals to the best log_loss)
 
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
-model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
 
 
 # Load best model
