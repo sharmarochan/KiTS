@@ -502,6 +502,22 @@ plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=200)
     
 
 
+###############################################################################
+"""
+model.save will save the full architecture of the model as well as the weights of the model, training confriguation
+the state of the optimizer, allowing resuming training exactly from where you left.
+
+
+load_model(file.h5)
+
+model.summary()
+
+model.get_weights()
+ 
+
+
+
+"""
 
 
 
