@@ -1,0 +1,17 @@
+nephrectomy = removal of kidney
+
+
+https://github.com/rdcolema/dsb/blob/master/unet_node_masking.ipynb
+
+https://www.kaggle.com/sentdex/first-pass-through-data-w-3d-convnet
+
+
+
+
+
+BGR
+Avg
+save
+compair with black img value
+
+store
