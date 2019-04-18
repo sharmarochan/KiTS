@@ -193,7 +193,7 @@ for patient in tqdm(all_patients):
 #                    continue
                     slices_images_segFile.append(cancer_slice_seg)
                 else:
-                    print("Dimention is not good", patient)
+                    print("Dimention is not good for", patient)
                     
                     
 
@@ -355,9 +355,15 @@ checkpoint_path = "E:\kits19\checkpoints\cp-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
+#callbacks = [
+#        EarlyStopping(patience=3, verbose=1),
+#        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+#        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
+#]
+
+
 callbacks = [
-        EarlyStopping(patience=3, verbose=1),
-        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        EarlyStopping(patience=10, verbose=1),
         ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
 ]
 
@@ -375,6 +381,7 @@ print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 10
 
 
 #Training of the model
+print("Epoch will be 24+")
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
                     validation_data=(X_valid, y_valid))
 
@@ -427,7 +434,7 @@ os.listdir(checkpoint_dir)
 
 
 #initiate the model architecture of the model if the training is stopped or kernel is dead
-latest = 'E:/kits19/checkpoints/cp-0001.ckpt'
+latest = 'E:\kits19\checkpoints\cp-0024.ckpt'
 model.load_weights(latest)
 
 # Restore model
@@ -456,13 +463,15 @@ model.evaluate(X_valid, y_valid, verbose=1)
 preds_train = model.predict(X_train, verbose=1)
 preds_val = model.predict(X_valid, verbose=1)
 
+
+Threshold = 0.5
 # Threshold predictions
-preds_train_t = (preds_train > 0.5).astype(np.uint8)
-preds_val_t = (preds_val > 0.5).astype(np.uint8)
+preds_train_t = (preds_train > Threshold).astype(np.uint8)
+preds_val_t = (preds_val > Threshold).astype(np.uint8)
 
 
 
-
+#write a function to loop over all the models and print outputs of same picture for each model.
 
 
 
@@ -475,35 +484,109 @@ def plot_sample(X, y, preds, binary_preds, ix=None):
     fig, ax = plt.subplots(1, 4, figsize=(20, 10))
     
     ax[0].imshow(X[ix, ..., 0], cmap='seismic')
+    
     if has_mask:
         ax[0].contour(y[ix].squeeze(), colors='k', levels=[0.5])
     ax[0].set_title('Image')
 
     ax[1].imshow(y[ix].squeeze())
-    ax[1].set_title('cancer')
+    ax[1].set_title('Annotation')
 
     ax[2].imshow(preds[ix].squeeze(), vmin=0, vmax=1)
     if has_mask:
         ax[2].contour(y[ix].squeeze(), colors='k', levels=[0.5])
-    ax[2].set_title('Image')
+    ax[2].set_title('Prediction')
     
     ax[3].imshow(binary_preds[ix].squeeze(), vmin=0, vmax=1)
     if has_mask:
         ax[3].contour(y[ix].squeeze(), colors='k', levels=[0.5])
-    ax[3].set_title('Cancer Predicted');
+    ax[3].set_title('Threshold Prediction'+str(Threshold));
 
 
 
 
-plot_sample(X_train, y_train, preds_train, preds_train_t, ix=200)
+count = 0
+for i in range(len(X_train)):
+    plot_sample(X_train, y_train, preds_train, preds_train_t, ix=i)
+    count = count + 1
+    
+    if count == 10:
+        break
 
 
-plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=200)
+
+count = 0
+for i in range(len(X_train)):
+    plot_sample(X_valid, y_valid, preds_val, preds_val_t, ix=200)
+    count = count + 1
+    
+    if count == 10:
+        break
+
+
+######################################visualize results #######################
+
+import matplotlib.pyplot as plt
+
+def plot_images(original_img, ground_truth, predicted_img, threshold_img, mod):
+    print("Inference of model ",mod)
+    f,ax = plt.subplots(1,4,figsize=(20, 10))
+    ax[0].imshow(original_img)
+    ax[0].set_title('Image')
+    ax[1].imshow(ground_truth)
+    ax[1].set_title('Label')
+    ax[2].imshow(predicted_img)
+    ax[2].set_title('Predicted')
+    ax[3].imshow(threshold_img)
+    ax[3].set_title('Clean Img')
+    plt.show()
+    
+
+
+
+
+for mod in range(1,20):
+    model_path = "E:\kits19\checkpoints\cp-000(D1)("+str(mod)+")"+".ckpt"
+    print(model_path)
+    print("Model is Reset")
+    #model reset
+    input_img = Input((im_height, im_width, 1), name='img')
+    model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+    model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
+    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
+    print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+    
+    print("Model Loaded: ",mod )
+    model.load_weights(latest)
+    
+    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
+    print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+    
+    
+    Threshold=0.5
+    preds_val = model.predict(X_valid[:4], verbose=1)
+    preds_val_t = (preds_val > Threshold).astype(np.uint8)
+        
+    for i in range(0,4):
+        original_img = X_valid[i, ..., 0]
+        ground_truth = y_valid[i].squeeze()
+        predicted_img = preds_val[i].squeeze()
+        threshold_img = preds_val_t[i].squeeze()
+        plot_images(original_img, ground_truth, predicted_img, threshold_img, mod)
+        
+    
     
 
 
 ###############################################################################
+
+
 """
+we overwrite first 5 models, so we have 5 to 24 models
+model 1 is 25th models acually. 
+
+
+
 model.save will save the full architecture of the model as well as the weights of the model, training confriguation
 the state of the optimizer, allowing resuming training exactly from where you left.
 
@@ -512,8 +595,7 @@ load_model(file.h5)
 
 model.summary()
 
-model.get_weights()
- 
+model.get_weights() 
 
 
 
@@ -521,3 +603,73 @@ model.get_weights()
 
 
 
+
+
+
+"""
+#confusion Matrix
+
+from sklearn.metrics import confusion_matrix
+import sklearn
+
+results = confusion_matrix(preds_train, preds_train)
+print(results)
+
+
+#labels = ['business', 'health']
+#cm = confusion_matrix(y_test, pred, labels)
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cax = ax.matshow(results)
+plt.title('Confusion matrix of the classifier')
+fig.colorbar(cax)
+#ax.set_xticklabels([''] + labels)
+#ax.set_yticklabels([''] + labels)
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
+
+
+
+
+
+
+
+
+
+#classification report
+
+print (sklearn.metrics.classification_report(y_train, preds_train))
+
+FP = confusion_matrix.sum(axis=0) - np.diag(confusion_matrix)  
+FN = confusion_matrix.sum(axis=1) - np.diag(confusion_matrix)
+TP = np.diag(confusion_matrix)
+TN = confusion_matrix.values.sum() - (FP + FN + TP)
+
+
+
+#https://stackoverflow.com/questions/31324218/scikit-learn-how-to-obtain-true-positive-true-negative-false-positive-and-fal
+
+
+
+# Sensitivity, hit rate, recall, or true positive rate
+TPR = TP/(TP+FN)
+# Specificity or true negative rate
+TNR = TN/(TN+FP) 
+# Precision or positive predictive value
+PPV = TP/(TP+FP)
+# Negative predictive value
+NPV = TN/(TN+FN)
+# Fall out or false positive rate
+FPR = FP/(FP+TN)
+# False negative rate
+FNR = FN/(TP+FN)
+# False discovery rate
+FDR = FP/(TP+FP)
+
+# Overall accuracy
+ACC = (TP+TN)/(TP+FP+FN+TN)
+
+
+'''
