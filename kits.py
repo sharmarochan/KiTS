@@ -132,6 +132,9 @@ slices_images_imageFile = []    #slices of the images that will be used for trai
 slices_images_segFile = []      #slices of the images that will be used for TARGET
 
 
+mean_Image_value = -68.59203445709038
+std_Image_value = 0.40116888892385894
+
 
 print("Loading dataset...")
 #slices_images_seg = np.empty()
@@ -149,12 +152,21 @@ for patient in tqdm(all_patients):
     for file in files_per_patient:
         full_path =  os.path.join(semi_full_path, file)
         seg_or_image = nib.load(full_path).get_data()
+        
+        #for header information
+        seg_or_image_load = nib.load(full_path)
+        n1_header = seg_or_image_load.header
+        print(n1_header)
+        
         img_data_arr = np.asarray(seg_or_image)
         file_type, _, _= file.split(".")
         
         
         
         if (file_type == 'imaging'):
+            seg_or_image = (seg_or_image - mean_Image_value) / std_Image_value
+            seg_or_image = seg_or_image.astype(np.float32)
+            
         #extract images slices from the 3D image
             for s in cancer_slice_num:
                 
@@ -225,11 +237,18 @@ ValueError: could not broadcast input array from shape (512,512,1) into shape (5
 print(Image_data.shape)      
 print(Target_data.shape)   
 
+# min max normalization
+Image_data_std = (Image_data - Image_data.min()) / (Image_data.max() - Image_data.min())
 
+
+
+
+
+#img_flair = (img_flair - m_flair) / s_flair
 
 #to check the size of traing and testing array
 print("Label data : {:.2f}MB  \
-      Image data  :{:.2f}MB ".format(Target_data.nbytes / (1024 * 1000.0), Image_data.nbytes / (1024 * 1000.0)))      
+      Image data  :{:.2f}MB ".format(Target_data.nbytes / (1024 * 1000.0), Image_data_std.nbytes / (1024 * 1000.0)))      
 
 
 
@@ -270,7 +289,7 @@ from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import tensorflow as tf
 
-X_train, X_valid, y_train, y_valid = train_test_split(Image_data, Target_data, test_size=0.20, random_state=2018)
+X_train, X_valid, y_train, y_valid = train_test_split(Image_data_std, Target_data, test_size=0.20, random_state=2018)
 
 
 
@@ -351,7 +370,7 @@ model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
 #model.summary()
 
 
-checkpoint_path = "E:\kits19\checkpoints\cp-{epoch:04d}.ckpt"
+checkpoint_path = "E:\kits19\checkpoints\cp-normalized-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
@@ -381,7 +400,7 @@ print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 10
 
 
 #Training of the model
-print("Epoch will be 24+")
+
 results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
                     validation_data=(X_valid, y_valid))
 
@@ -434,7 +453,7 @@ os.listdir(checkpoint_dir)
 
 
 #initiate the model architecture of the model if the training is stopped or kernel is dead
-latest = 'E:\kits19\checkpoints\cp-0024.ckpt'
+latest = 'E:\kits19\checkpoints\cp-0029.ckpt'
 model.load_weights(latest)
 
 # Restore model
@@ -527,22 +546,21 @@ for i in range(len(X_train)):
 ######################################visualize results #######################
 
 import matplotlib.pyplot as plt
+import collections
 
 def plot_images(original_img, ground_truth, predicted_img, threshold_img, mod):
     print("Inference of model ",mod)
     f,ax = plt.subplots(1,4,figsize=(20, 10))
-    ax[0].imshow(original_img)
+    ax[0].imshow(original_img)#, cmap='gray')
     ax[0].set_title('Image')
-    ax[1].imshow(ground_truth)
+    ax[1].imshow(ground_truth)#, cmap='gray')
     ax[1].set_title('Label')
-    ax[2].imshow(predicted_img)
+    ax[2].imshow(predicted_img)#, cmap='gray')
     ax[2].set_title('Predicted')
-    ax[3].imshow(threshold_img)
+    ax[3].imshow(threshold_img)#, cmap='gray')
     ax[3].set_title('Clean Img')
     plt.show()
     
-
-
 
 
 for mod in range(1,20):
@@ -553,14 +571,14 @@ for mod in range(1,20):
     input_img = Input((im_height, im_width, 1), name='img')
     model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
     model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
-    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
-    print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+#    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
+#    print("Untrained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
     
     print("Model Loaded: ",mod )
-    model.load_weights(latest)
-    
-    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
-    print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
+    model.load_weights(model_path)
+
+#    loss, acc = model.evaluate(X_valid[:10], y_valid[:10])
+#    print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
     
     
     Threshold=0.5
@@ -574,8 +592,13 @@ for mod in range(1,20):
         threshold_img = preds_val_t[i].squeeze()
         plot_images(original_img, ground_truth, predicted_img, threshold_img, mod)
         
-    
-    
+        count_ground_truth = collections.Counter(y_valid[i].flatten())
+        count_predicted_img = collections.Counter(preds_val[i].flatten())
+        count_orignal_img = collections.Counter(original_img.flatten())
+        
+#        print("count_ground_truth is {}, count_predicted_img is {}".format(count_ground_truth, count_predicted_img))
+        
+  
 
 
 ###############################################################################
