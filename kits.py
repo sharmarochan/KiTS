@@ -374,17 +374,17 @@ checkpoint_path = "E:\kits19\checkpoints\cp-normalized-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
-#callbacks = [
-#        EarlyStopping(patience=3, verbose=1),
-#        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-#        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
-#]
-
-
 callbacks = [
-        EarlyStopping(patience=10, verbose=1),
+        EarlyStopping(patience=3, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
         ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
 ]
+
+
+#callbacks = [
+#        EarlyStopping(patience=10, verbose=1),
+#        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
+#]
 
 
 #callbacks: class
@@ -405,7 +405,7 @@ results = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callb
                     validation_data=(X_valid, y_valid))
 
 
-####### Runned upto here Rochan #######
+####### Runned upto here by Rochan #######
 
 loss, acc = model.evaluate(X_valid, y_valid)
 print("Trained model, loss: {:5.2f}% , accuracy: {:5.2f}%".format(100*loss, 100*acc))
