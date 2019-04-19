@@ -55,6 +55,7 @@ take relevent images only from the nifiti images
 Image data generator with saving all the pics into array in memory
 Make a CSV file for storing the position and depth of the images.
 extact ROI from seg file and crop that section only to inser into NN.
+Image Augumentation
 *********
 Train on Half dataset for longer epoches and see results. Post processing
 Reduce the size of the image
@@ -374,17 +375,17 @@ checkpoint_path = "E:\kits19\checkpoints\cp-normalized-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
-callbacks = [
-        EarlyStopping(patience=3, verbose=1),
-        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
-        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
-]
-
-
 #callbacks = [
-#        EarlyStopping(patience=10, verbose=1),
+#        EarlyStopping(patience=3, verbose=1),
+#        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
 #        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
 #]
+
+
+callbacks = [
+        EarlyStopping(patience=10, verbose=1),
+        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
+]
 
 
 #callbacks: class
@@ -564,7 +565,8 @@ def plot_images(original_img, ground_truth, predicted_img, threshold_img, mod):
 
 
 for mod in range(1,20):
-    model_path = "E:\kits19\checkpoints\cp-000(D1)("+str(mod)+")"+".ckpt"
+    
+    model_path = "E:\kits19\checkpoints\cp-normalized-000"+str(mod)+".ckpt"
     print(model_path)
     print("Model is Reset")
     #model reset
