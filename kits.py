@@ -286,7 +286,7 @@ from keras.layers.convolutional import Conv2D, Conv2DTranspose
 from keras.layers.pooling import MaxPooling2D, GlobalMaxPool2D
 from keras.layers.merge import concatenate, add
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 import tensorflow as tf
 
@@ -367,11 +367,11 @@ im_height = 320
 input_img = Input((im_height, im_width, 1), name='img')
 model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
 
-model.compile(optimizer=Adam(), loss="mean_squared_error", metrics=["accuracy"])
+model.compile(optimizer=RMSprop(lr=0.0001, rho=0.9, epsilon=None, decay=0.0), loss="mean_squared_error", metrics=["accuracy"])
 #model.summary()
 
 
-checkpoint_path = "E:\kits19\checkpoints\cp-normalized-{epoch:04d}.ckpt"
+checkpoint_path = "E:\kits19\checkpoints\cp-normalized-rms-{epoch:04d}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 
@@ -566,7 +566,7 @@ def plot_images(original_img, ground_truth, predicted_img, threshold_img, mod):
 
 for mod in range(1,20):
     
-    model_path = "E:\kits19\checkpoints\cp-normalized-000"+str(mod)+".ckpt"
+    model_path = "E:\kits19\checkpoints\cp-normalized-rms-000"+str(mod)+".ckpt"
     print(model_path)
     print("Model is Reset")
     #model reset
@@ -597,6 +597,8 @@ for mod in range(1,20):
         count_ground_truth = collections.Counter(y_valid[i].flatten())
         count_predicted_img = collections.Counter(preds_val[i].flatten())
         count_orignal_img = collections.Counter(original_img.flatten())
+        
+        count_1 = list(preds_val[i].flatten()).count(2)
         
 #        print("count_ground_truth is {}, count_predicted_img is {}".format(count_ground_truth, count_predicted_img))
         
