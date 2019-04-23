@@ -157,7 +157,7 @@ for patient in tqdm(all_patients):
         #for header information
         seg_or_image_load = nib.load(full_path)
         n1_header = seg_or_image_load.header
-        print(n1_header)
+#        print(n1_header)
         
         img_data_arr = np.asarray(seg_or_image)
         file_type, _, _= file.split(".")
@@ -192,6 +192,10 @@ for patient in tqdm(all_patients):
             for s in cancer_slice_num:
     
                 cancer_slice_seg = seg_or_image[s, :, :]
+                
+                if cancer_slice_seg.max() == 1:
+                    print("Max cancer_slice_seg vlaues is 1")
+                
                 cancer_slice_seg_height, cancer_slice_seg_width = cancer_slice_seg.shape[0], cancer_slice_seg.shape[1]
                 
                 cancer_slice_seg = cancer_slice_seg[95:415 , 95:415]
@@ -564,9 +568,9 @@ def plot_images(original_img, ground_truth, predicted_img, threshold_img, mod):
     
 
 
-for mod in range(1,20):
+for mod in range(1,9):
     
-    model_path = "E:\kits19\checkpoints\cp-normalized-rms-000"+str(mod)+".ckpt"
+    model_path = "E:\kits19\checkpoints\cp-normalized-000"+str(mod)+".ckpt"
     print(model_path)
     print("Model is Reset")
     #model reset
@@ -594,13 +598,17 @@ for mod in range(1,20):
         threshold_img = preds_val_t[i].squeeze()
         plot_images(original_img, ground_truth, predicted_img, threshold_img, mod)
         
+        
+        map_vals = np.around(preds_val[i].flatten())
         count_ground_truth = collections.Counter(y_valid[i].flatten())
+        count_predicted_img_round = collections.Counter(map_vals)
         count_predicted_img = collections.Counter(preds_val[i].flatten())
+        sum(i > 1 for i in count_predicted_img)
         count_orignal_img = collections.Counter(original_img.flatten())
         
         count_1 = list(preds_val[i].flatten()).count(2)
-        
-#        print("count_ground_truth is {}, count_predicted_img is {}".format(count_ground_truth, count_predicted_img))
+
+        print("count_ground_truth is {}, count_predicted_img is {}".format(count_ground_truth, count_predicted_img))
         
   
 
