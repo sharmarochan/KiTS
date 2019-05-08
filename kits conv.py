@@ -467,4 +467,4 @@ def SIMPLE(a,b,c,d):
 SIMPLE(x_train, y_train,x_test,y_test)
     
     
-
+#https://www.kaggle.com/paultimothymooney/identification-and-segmentation-of-nuclei-in-cells

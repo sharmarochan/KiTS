@@ -1,0 +1,498 @@
+    x = Conv2D(filters=n_filters, kernel_size=(kernel_size, kernel_size), kernel_initializer="he_normal",
+               padding="same")(input_tensor)
+    if batchnorm:
+        x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    # second layer
+    x = Conv2D(filters=n_filters, kernel_size=(kernel_size, kernel_size), kernel_initializer="he_normal",
+               padding="same")(x)
+    if batchnorm:
+        x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+    return x
+
+
+
+
+def get_unet(input_img, n_filters=16, dropout=0.5, batchnorm=True):
+    # contracting path
+    c1 = conv2d_block(input_img, n_filters=n_filters*1, kernel_size=3, batchnorm=batchnorm)
+    p1 = MaxPooling2D((2, 2)) (c1)
+    p1 = Dropout(dropout*0.5)(p1)
+    
+    c2 = conv2d_block(p1, n_filters=n_filters*2, kernel_size=3, batchnorm=batchnorm)
+    p2 = MaxPooling2D((2, 2)) (c2)
+    p2 = Dropout(dropout)(p2)
+    
+    c3 = conv2d_block(p2, n_filters=n_filters*4, kernel_size=3, batchnorm=batchnorm)
+    p3 = MaxPooling2D((2, 2)) (c3)
+    p3 = Dropout(dropout)(p3)
+    
+    c4 = conv2d_block(p3, n_filters=n_filters*8, kernel_size=3, batchnorm=batchnorm)
+    p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+    p4 = Dropout(dropout)(p4)
+    
+    c5 = conv2d_block(p4, n_filters=n_filters*16, kernel_size=3, batchnorm=batchnorm)
+    
+    # expansive path
+    u6 = Conv2DTranspose(n_filters*8, (3, 3), strides=(2, 2), padding='same') (c5)
+    u6 = concatenate([u6, c4])
+    u6 = Dropout(dropout)(u6)
+    c6 = conv2d_block(u6, n_filters=n_filters*8, kernel_size=3, batchnorm=batchnorm)
+    
+    u7 = Conv2DTranspose(n_filters*4, (3, 3), strides=(2, 2), padding='same') (c6)
+    u7 = concatenate([u7, c3])
+    u7 = Dropout(dropout)(u7)
+    c7 = conv2d_block(u7, n_filters=n_filters*4, kernel_size=3, batchnorm=batchnorm)
+    
+    u8 = Conv2DTranspose(n_filters*2, (3, 3), strides=(2, 2), padding='same') (c7)
+    u8 = concatenate([u8, c2])
+    u8 = Dropout(dropout)(u8)
+    c8 = conv2d_block(u8, n_filters=n_filters*2, kernel_size=3, batchnorm=batchnorm)
+    
+    u9 = Conv2DTranspose(n_filters*1, (3, 3), strides=(2, 2), padding='same') (c8)
+    u9 = concatenate([u9, c1], axis=3)
+    u9 = Dropout(dropout)(u9)
+    c9 = conv2d_block(u9, n_filters=n_filters*1, kernel_size=3, batchnorm=batchnorm)
+    
+    outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
+    model = Model(inputs=[input_img], outputs=[outputs])
+    return model
+
+
+
+
+im_width = 320
+im_height = 320
+
+
+##################################### Model Compile or RESET #####################################
+
+input_img = Input((im_height, im_width, 1), name='img')
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+#model.summary()
+WARNING:tensorflow:From C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\tensorflow\python\framework\op_def_library.py:263: colocate_with (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Colocations handled automatically by placer.
+WARNING:tensorflow:From C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\keras\backend\tensorflow_backend.py:3445: calling dropout (from tensorflow.python.ops.nn_ops) with keep_prob is deprecated and will be removed in a future version.
+Instructions for updating:
+Please use `rate` instead of `keep_prob`. Rate should be set to `rate = 1 - keep_prob`.
+
+input_img = Input((im_height, im_width, 1), name='img')
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+#model.summary()
+
+results_0_2_mask = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
+                    validation_data=(X_valid, y_valid))
+Traceback (most recent call last):
+
+  File "<ipython-input-4-bc3a79c42cd7>", line 1, in <module>
+    results_0_2_mask = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
+
+NameError: name 'X_train' is not defined
+
+
+
+
+Target_data_cancer_0_2_mask = np.where(Target_data_cancer==1, 0, Target_data_cancer)
+
+
+X_train, X_valid, y_train, y_valid = train_test_split(Image_data_kidney_std, Target_data_cancer_0_2_mask, test_size=0.20, random_state=2018)
+Traceback (most recent call last):
+
+  File "<ipython-input-5-f5e09e4c19af>", line 4, in <module>
+    X_train, X_valid, y_train, y_valid = train_test_split(Image_data_kidney_std, Target_data_cancer_0_2_mask, test_size=0.20, random_state=2018)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\sklearn\model_selection\_split.py", line 2184, in train_test_split
+    arrays = indexable(*arrays)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\sklearn\utils\validation.py", line 260, in indexable
+    check_consistent_length(*result)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\sklearn\utils\validation.py", line 235, in check_consistent_length
+    " samples: %r" % [int(l) for l in lengths])
+
+ValueError: Found input variables with inconsistent numbers of samples: [10508, 5615]
+
+
+
+
+Target_data_cancer_0_2_mask = np.where(Target_data_cancer==1, 0, Target_data_cancer)
+
+Target_data_cancer_0_2_mask.shape()
+Traceback (most recent call last):
+
+  File "<ipython-input-7-122ba9ca8a8d>", line 1, in <module>
+    Target_data_cancer_0_2_mask.shape()
+
+TypeError: 'tuple' object is not callable
+
+
+
+
+Target_data_cancer_0_2_mask.shape
+Out[8]: (5615, 320, 320, 1)
+
+
+
+Image_data_kidney_std.shape
+Out[9]: (10508, 320, 320, 1)
+
+Image_data_cancer_std = (Image_data_cancer - Image_data_cancer.min()) / (Image_data_cancer.max() - Image_data_cancer.min())
+
+Image_data_cancer_std.shape
+Out[11]: (5615, 320, 320, 1)
+
+X_train, X_valid, y_train, y_valid = train_test_split(Image_data_cancer_std, Target_data_cancer_0_2_mask, test_size=0.20, random_state=2018)
+
+X_train.shape
+Out[13]: (4492, 320, 320, 1)
+
+y_train.shape
+Out[14]: (4492, 320, 320, 1)
+
+X_valid.shape
+Out[15]: (1123, 320, 320, 1)
+
+y_valid.shape
+Out[16]: (1123, 320, 320, 1)
+
+Target_data_cancer_0_2_mask = np.where(Target_data_cancer==1, 0, Target_data_cancer)
+
+
+X_train, X_valid, y_train, y_valid = train_test_split(Image_data_cancer_std, Target_data_cancer_0_2_mask, test_size=0.20, random_state=2018)
+
+input_img = Input((im_height, im_width, 1), name='img')
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+#model.summary()
+
+
+checkpoint_path = "E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-{epoch:04d}.ckpt"
+checkpoint_dir = os.path.dirname(checkpoint_path)
+
+
+callbacks = [
+        EarlyStopping(patience=3, verbose=1),
+        ReduceLROnPlateau(factor=0.1, patience=3, min_lr=0.00001, verbose=1),
+        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
+]
+
+results_0_2_mask = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
+                    validation_data=(X_valid, y_valid))
+WARNING:tensorflow:From C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\tensorflow\python\ops\math_ops.py:3066: to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+Train on 4492 samples, validate on 1123 samples
+Epoch 1/100
+4492/4492 [==============================] - 3346s 745ms/step - loss: 0.2103 - acc: 0.9347 - val_loss: 0.5003 - val_acc: 0.8913] - ETA: 29:20 - loss: 0.3600 - acc: 0.91093136/4492 [===================>..........] - ETA: 15:13 - loss: 0.2771 - acc: 0.9257
+
+Epoch 00001: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-0001.ckpt
+Epoch 2/100
+4492/4492 [==============================] - 3340s 744ms/step - loss: -0.0943 - acc: 0.9576 - val_loss: 0.2386 - val_acc: 0.9677- ETA: 42:31 - loss: 0.0353 - acc: 0.9541 - ETA: 17:13 - loss: -0.0484 - acc: 0.9579
+
+Epoch 00002: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-0002.ckpt
+Epoch 3/100
+4492/4492 [==============================] - 3345s 745ms/step - loss: -0.2102 - acc: 0.9608 - val_loss: 0.3152 - val_acc: 0.9503
+
+Epoch 00003: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-0003.ckpt
+Epoch 4/100
+4492/4492 [==============================] - 3334s 742ms/step - loss: -0.2663 - acc: 0.9624 - val_loss: 0.8188 - val_acc: 0.8648
+
+Epoch 00004: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-0004.ckpt
+Epoch 5/100
+4492/4492 [==============================] - 3336s 743ms/step - loss: -0.3064 - acc: 0.9639 - val_loss: 0.3710 - val_acc: 0.9473- ETA: 19:18 - loss: -0.2901 - acc: 0.96453296/4492 [=====================>........] - ETA: 13:16 - loss: -0.2965 - acc: 0.96394288/4492 [===========================>..] - ETA: 2:16 - loss: -0.3048 - acc: 0.9638
+
+Epoch 00005: ReduceLROnPlateau reducing learning rate to 0.00010000000474974513.
+
+Epoch 00005: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model-0005.ckpt
+Epoch 00005: early stopping
+
+plt.figure(figsize=(8, 8))
+plt.title("Learning curve")
+plt.plot(results.history["loss"], label="loss")
+plt.plot(results.history["val_loss"], label="val_loss")
+plt.plot( np.argmin(results.history["val_loss"]), np.min(results.history["val_loss"]), marker="x", color="r", label="best model")
+plt.xlabel("Epochs")
+plt.ylabel("log_loss")
+plt.legend();
+Traceback (most recent call last):
+
+  File "<ipython-input-20-6a34272a34c5>", line 3, in <module>
+    plt.plot(results.history["loss"], label="loss")
+
+NameError: name 'results' is not defined
+
+
+?
+
+
+
+plt.figure(figsize=(8, 8))
+plt.title("Learning curve")
+plt.plot(results_0_2_mask.history["loss"], label="loss")
+plt.plot(results_0_2_mask.history["val_loss"], label="val_loss")
+plt.plot( np.argmin(results_0_2_mask.history["val_loss"]), np.min(results_0_2_mask.history["val_loss"]), marker="x", color="r", label="best model")
+plt.xlabel("Epochs")
+plt.ylabel("log_loss")
+plt.legend();
+
+?
+
+input_img = Input((im_height, im_width, 1), name='img')
+model = get_unet(input_img, n_filters=16, dropout=0.05, batchnorm=True)
+
+model.compile(optimizer=Adam(), loss="binary_crossentropy", metrics=["accuracy"])
+#model.summary()
+
+
+checkpoint_path = "E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-{epoch:04d}.ckpt"
+checkpoint_dir = os.path.dirname(checkpoint_path)
+
+callbacks = [
+        EarlyStopping(patience=10, verbose=1),
+        ModelCheckpoint(checkpoint_path, verbose=1, save_weights_only=True, period = 1)
+]
+
+results_0_2_mask = model.fit(X_train, y_train, batch_size=32, epochs=100, callbacks=callbacks,
+                    validation_data=(X_valid, y_valid))
+Train on 4492 samples, validate on 1123 samples
+Epoch 1/100
+ 160/4492 [>.............................] - ETA: 54:50 - loss: 0.6875 - acc: 0.6446  Traceback (most recent call last):
+
+  File "<ipython-input-25-bc3a79c42cd7>", line 2, in <module>
+    validation_data=(X_valid, y_valid))
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\keras\engine\training.py", line 1039, in fit
+    validation_steps=validation_steps)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\keras\engine\training_arrays.py", line 199, in fit_loop
+    outs = f(ins_batch)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\keras\backend\tensorflow_backend.py", line 2715, in __call__
+    return self._call(inputs)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\keras\backend\tensorflow_backend.py", line 2675, in _call
+    fetched = self._callable_fn(*array_vals)
+
+  File "C:\Users\tensor19\Anaconda3\envs\kids\lib\site-packages\tensorflow\python\client\session.py", line 1439, in __call__
+    run_metadata_ptr)
+
+KeyboardInterrupt
+
+
+
+
+results_0_2_mask = model.fit(X_train, y_train, batch_size=64, epochs=100, callbacks=callbacks,
+                    validation_data=(X_valid, y_valid))
+Train on 4492 samples, validate on 1123 samples
+Epoch 1/100
+4492/4492 [==============================] - 3583s 798ms/step - loss: 0.2687 - acc: 0.9422 - val_loss: 0.3554 - val_acc: 0.9442
+
+Epoch 00001: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0001.ckpt
+Epoch 2/100
+4492/4492 [==============================] - 3545s 789ms/step - loss: 0.0380 - acc: 0.9554 - val_loss: 0.2394 - val_acc: 0.9677- ETA: 7:41 - loss: 0.0537 - acc: 0.9549 - ETA: 2:24 - loss: 0.0439 - acc: 0.9556
+
+Epoch 00002: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0002.ckpt
+Epoch 3/100
+4492/4492 [==============================] - 3450s 768ms/step - loss: -0.1092 - acc: 0.9587 - val_loss: 0.2422 - val_acc: 0.9680
+
+Epoch 00003: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0003.ckpt
+Epoch 4/100
+4492/4492 [==============================] - 3444s 767ms/step - loss: -0.1885 - acc: 0.9606 - val_loss: 0.2187 - val_acc: 0.9680
+
+Epoch 00004: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0004.ckpt
+Epoch 5/100
+4492/4492 [==============================] - 3438s 765ms/step - loss: -0.2537 - acc: 0.9619 - val_loss: 0.1695 - val_acc: 0.9650
+
+Epoch 00005: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0005.ckpt
+Epoch 6/100
+4492/4492 [==============================] - 3448s 768ms/step - loss: -0.2840 - acc: 0.9623 - val_loss: 0.0479 - val_acc: 0.9655
+
+Epoch 00006: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0006.ckpt
+Epoch 7/100
+4480/4492 [============================>.] - ETA: 8s - loss: -0.3257 - acc: 0.9636   4160/4492 [==========================>...] - ETA: 3:48 - loss: -0.3226 - acc: 0.96384492/4492 [==============================] - 3455s 769ms/step - loss: -0.3267 - acc: 0.9636 - val_loss: 0.1213 - val_acc: 0.9671
+
+Epoch 00007: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0007.ckpt
+Epoch 8/100
+4492/4492 [==============================] - 3487s 776ms/step - loss: -0.3524 - acc: 0.9642 - val_loss: -0.0048 - val_acc: 0.9649
+
+Epoch 00008: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0008.ckpt
+Epoch 9/100
+4492/4492 [==============================] - 3453s 769ms/step - loss: -0.3660 - acc: 0.9645 - val_loss: -0.1537 - val_acc: 0.9664
+
+Epoch 00009: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0009.ckpt
+Epoch 10/100
+4492/4492 [==============================] - 3442s 766ms/step - loss: -0.3832 - acc: 0.9649 - val_loss: 0.2713 - val_acc: 0.9677
+
+Epoch 00010: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0010.ckpt
+Epoch 11/100
+4492/4492 [==============================] - 3454s 769ms/step - loss: -0.3899 - acc: 0.9649 - val_loss: -0.2959 - val_acc: 0.9650
+
+Epoch 00011: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0011.ckpt
+Epoch 12/100
+4492/4492 [==============================] - 3456s 769ms/step - loss: -0.3887 - acc: 0.9648 - val_loss: -0.0870 - val_acc: 0.9621 ETA: 1:36 - loss: -0.3878 - acc: 0.9649
+
+Epoch 00012: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0012.ckpt
+Epoch 13/100
+4492/4492 [==============================] - 3455s 769ms/step - loss: -0.4078 - acc: 0.9656 - val_loss: 0.1078 - val_acc: 0.9669- ETA: 20:47 - loss: -0.4053 - acc: 0.9655
+
+Epoch 00013: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0013.ckpt
+Epoch 14/100
+4492/4492 [==============================] - 3451s 768ms/step - loss: -0.4181 - acc: 0.9659 - val_loss: -0.3738 - val_acc: 0.9649
+
+Epoch 00014: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0014.ckpt
+Epoch 15/100
+4492/4492 [==============================] - 3424s 762ms/step - loss: -0.4236 - acc: 0.9660 - val_loss: -0.3948 - val_acc: 0.9639 ETA: 12:36 - loss: -0.4205 - acc: 0.9662
+
+Epoch 00015: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0015.ckpt
+Epoch 16/100
+4492/4492 [==============================] - 3376s 752ms/step - loss: -0.4248 - acc: 0.9659 - val_loss: -0.3610 - val_acc: 0.9652 ETA: 44:32 - loss: -0.4325 - acc: 0.9653
+
+Epoch 00016: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0016.ckpt
+Epoch 17/100
+4492/4492 [==============================] - 3373s 751ms/step - loss: -0.4325 - acc: 0.9662 - val_loss: -0.3957 - val_acc: 0.9660
+
+Epoch 00017: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0017.ckpt
+Epoch 18/100
+4492/4492 [==============================] - 3368s 750ms/step - loss: -0.4329 - acc: 0.9661 - val_loss: 0.3231 - val_acc: 0.9673- ETA: 38:19 - loss: -0.4268 - acc: 0.9657
+
+Epoch 00018: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0018.ckpt
+Epoch 19/100
+4492/4492 [==============================] - 3373s 751ms/step - loss: -0.4400 - acc: 0.9664 - val_loss: -0.1701 - val_acc: 0.9644
+
+Epoch 00019: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0019.ckpt
+Epoch 20/100
+4492/4492 [==============================] - 3357s 747ms/step - loss: -0.4418 - acc: 0.9665 - val_loss: -0.3312 - val_acc: 0.9652
+
+Epoch 00020: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0020.ckpt
+Epoch 21/100
+4492/4492 [==============================] - 3360s 748ms/step - loss: -0.4448 - acc: 0.9665 - val_loss: -0.4306 - val_acc: 0.9658
+
+Epoch 00021: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0021.ckpt
+Epoch 22/100
+4492/4492 [==============================] - 3362s 748ms/step - loss: -0.4471 - acc: 0.9667 - val_loss: -0.4473 - val_acc: 0.9655
+
+Epoch 00022: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0022.ckpt
+Epoch 23/100
+4492/4492 [==============================] - 3369s 750ms/step - loss: -0.4513 - acc: 0.9668 - val_loss: -0.3623 - val_acc: 0.9657
+
+Epoch 00023: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0023.ckpt
+Epoch 24/100
+4492/4492 [==============================] - 3372s 751ms/step - loss: -0.4541 - acc: 0.9670 - val_loss: -0.4289 - val_acc: 0.9633
+
+Epoch 00024: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0024.ckpt
+Epoch 25/100
+4492/4492 [==============================] - 3378s 752ms/step - loss: -0.4553 - acc: 0.9669 - val_loss: -0.4470 - val_acc: 0.9655- ETA: 22:23 - loss: -0.4639 - acc: 0.9665
+
+Epoch 00025: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0025.ckpt
+Epoch 26/100
+4492/4492 [==============================] - 3357s 747ms/step - loss: -0.4457 - acc: 0.9666 - val_loss: -0.4402 - val_acc: 0.9649
+
+Epoch 00026: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0026.ckpt
+Epoch 27/100
+4492/4492 [==============================] - 3368s 750ms/step - loss: -0.4518 - acc: 0.9668 - val_loss: -0.4255 - val_acc: 0.9636
+
+Epoch 00027: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0027.ckpt
+Epoch 28/100
+4492/4492 [==============================] - 3361s 748ms/step - loss: -0.4587 - acc: 0.9671 - val_loss: -0.3759 - val_acc: 0.9650
+
+Epoch 00028: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0028.ckpt
+Epoch 29/100
+4492/4492 [==============================] - 3374s 751ms/step - loss: -0.4610 - acc: 0.9672 - val_loss: -0.4428 - val_acc: 0.9645- ETA: 42:20 - loss: -0.4635 - acc: 0.9672
+
+Epoch 00029: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0029.ckpt
+Epoch 30/100
+4492/4492 [==============================] - 3360s 748ms/step - loss: -0.4555 - acc: 0.9670 - val_loss: -0.4538 - val_acc: 0.9658
+
+Epoch 00030: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0030.ckpt
+Epoch 31/100
+4492/4492 [==============================] - 3378s 752ms/step - loss: -0.4616 - acc: 0.9672 - val_loss: -0.3960 - val_acc: 0.9612
+
+Epoch 00031: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0031.ckpt
+Epoch 32/100
+4492/4492 [==============================] - 3361s 748ms/step - loss: -0.4633 - acc: 0.9673 - val_loss: -0.3367 - val_acc: 0.9583
+
+Epoch 00032: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0032.ckpt
+Epoch 33/100
+4492/4492 [==============================] - 3382s 753ms/step - loss: -0.4594 - acc: 0.9671 - val_loss: 0.4246 - val_acc: 0.9672- ETA: 4:26 - loss: -0.4596 - acc: 0.9671
+
+Epoch 00033: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0033.ckpt
+Epoch 34/100
+4492/4492 [==============================] - 3370s 750ms/step - loss: -0.4631 - acc: 0.9673 - val_loss: 0.0284 - val_acc: 0.9507- ETA: 31:37 - loss: -0.4533 - acc: 0.9678
+
+Epoch 00034: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0034.ckpt
+Epoch 35/100
+4492/4492 [==============================] - 3369s 750ms/step - loss: -0.4658 - acc: 0.9674 - val_loss: -0.4318 - val_acc: 0.9644- ETA: 8:45 - loss: -0.4727 - acc: 0.9670
+
+Epoch 00035: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0035.ckpt
+Epoch 36/100
+4492/4492 [==============================] - 3408s 759ms/step - loss: -0.4669 - acc: 0.9675 - val_loss: -0.4648 - val_acc: 0.9658
+
+Epoch 00036: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0036.ckpt
+Epoch 37/100
+4492/4492 [==============================] - 3397s 756ms/step - loss: -0.4688 - acc: 0.9676 - val_loss: -0.4598 - val_acc: 0.9664
+
+Epoch 00037: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0037.ckpt
+Epoch 38/100
+4492/4492 [==============================] - 3410s 759ms/step - loss: -0.4689 - acc: 0.9676 - val_loss: -0.4676 - val_acc: 0.9659
+
+Epoch 00038: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0038.ckpt
+Epoch 39/100
+4492/4492 [==============================] - 3427s 763ms/step - loss: -0.4692 - acc: 0.9676 - val_loss: -0.4592 - val_acc: 0.9663
+
+Epoch 00039: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0039.ckpt
+Epoch 40/100
+4492/4492 [==============================] - 3460s 770ms/step - loss: -0.4686 - acc: 0.9676 - val_loss: -0.4653 - val_acc: 0.9662
+
+Epoch 00040: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0040.ckpt
+Epoch 41/100
+4492/4492 [==============================] - 3404s 758ms/step - loss: -0.4704 - acc: 0.9677 - val_loss: -0.4679 - val_acc: 0.9664
+
+Epoch 00041: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0041.ckpt
+Epoch 42/100
+4492/4492 [==============================] - 3405s 758ms/step - loss: -0.4713 - acc: 0.9677 - val_loss: -0.4663 - val_acc: 0.9665 ETA: 32:48 - loss: -0.4811 - acc: 0.9671
+
+Epoch 00042: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0042.ckpt
+Epoch 43/100
+4492/4492 [==============================] - 3429s 763ms/step - loss: -0.4706 - acc: 0.9676 - val_loss: -0.4626 - val_acc: 0.9659
+
+Epoch 00043: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0043.ckpt
+Epoch 44/100
+4492/4492 [==============================] - 3366s 749ms/step - loss: -0.4712 - acc: 0.9677 - val_loss: -0.4673 - val_acc: 0.9661
+
+Epoch 00044: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0044.ckpt
+Epoch 45/100
+4492/4492 [==============================] - 3371s 750ms/step - loss: -0.4723 - acc: 0.9677 - val_loss: -0.4601 - val_acc: 0.9658
+
+Epoch 00045: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0045.ckpt
+Epoch 46/100
+4492/4492 [==============================] - 3370s 750ms/step - loss: -0.4724 - acc: 0.9678 - val_loss: -0.4635 - val_acc: 0.9654 ETA: 48:16 - loss: -0.4568 - acc: 0.9690 - ETA: 19:30 - loss: -0.4784 - acc: 0.9674 - ETA: 10:55 - loss: -0.4649 - acc: 0.9682
+
+Epoch 00046: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0046.ckpt
+Epoch 47/100
+4492/4492 [==============================] - 3363s 749ms/step - loss: -0.4688 - acc: 0.9676 - val_loss: -0.0609 - val_acc: 0.9639
+
+Epoch 00047: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0047.ckpt
+Epoch 48/100
+4492/4492 [==============================] - 3364s 749ms/step - loss: -0.4591 - acc: 0.9672 - val_loss: 0.4457 - val_acc: 0.9669- ETA: 22:21 - loss: -0.4588 - acc: 0.96793840/4492 [========================>.....] - ETA: 7:18 - loss: -0.4537 - acc: 0.9677
+
+Epoch 00048: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0048.ckpt
+Epoch 49/100
+4492/4492 [==============================] - 3363s 749ms/step - loss: -0.4525 - acc: 0.9668 - val_loss: -0.2052 - val_acc: 0.9648
+
+Epoch 00049: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0049.ckpt
+Epoch 50/100
+4492/4492 [==============================] - 3370s 750ms/step - loss: -0.4566 - acc: 0.9671 - val_loss: 0.4950 - val_acc: 0.9676
+
+Epoch 00050: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0050.ckpt
+Epoch 51/100
+4492/4492 [==============================] - 3369s 750ms/step - loss: -0.4663 - acc: 0.9674 - val_loss: 0.1519 - val_acc: 0.9667
+
+Epoch 00051: saving model to E:\kits19\checkpoints_v2\cp-normalized-adam_0_2_mask_model_test_run_secondTime-0051.ckpt
+Epoch 00051: early stopping
